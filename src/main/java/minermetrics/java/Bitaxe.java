@@ -6,18 +6,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 public class Bitaxe {
 
-//    int boardVersion = 0;
-//    double hashRate = 0.0;
-
-    public int getBoardVersion() {
-        return boardVersion;
-    }
-    private int boardVersion;
-
-    public double getHashRate() {return hashRate;}
-    private double hashRate;
-
-    public int getCoreVoltage() {return coreVoltage;}
-    private int coreVoltage;
+    public int boardVersion = 0;
+    public int frequency = 0;
+    public int coreVoltage = 0;
+    public int temptarget = 0;
+    public int fanspeed = 0;
+    public int fanrpm = 0;
+    public double hashRate = 0.0;
+    public double temp = 0.0;
+    public double power = 0.0;
+    //public double joulesPerTeraHash = power / hashRate;
+    public int uptimeSeconds = 0;
 }
 

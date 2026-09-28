@@ -5,12 +5,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.io.LineNumberInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
 
 public class App
 {
@@ -19,8 +19,7 @@ public class App
 
         connectionCheck(args);
         for (int index = 0; index < args.length; index++) {
-            Bitaxe instanceData = collectData(args[index]);
-            System.out.println(instanceData.getHashRate());
+            Bitaxe instanceData = fetchData(args[index]);
         }
 
     }
@@ -51,11 +50,11 @@ public class App
 
     public static void connectionCheck( String[] args ) {
 
-        for (int i = 0; i < args.length; i++) {
-            HttpResponse<String> connection = instanceConnect(args[i]);
+        for (String arg : args) {
+            HttpResponse<String> connection = instanceConnect(arg);
 
             if (connection.statusCode() == 200) {
-                System.out.println("Connection to succesfull " + args[i]);
+                System.out.println("Connection to succesfull " + arg);
             }
         }
 
@@ -64,7 +63,7 @@ public class App
     }
 
 
-    public static Bitaxe collectData(String ipv4){
+    public static Bitaxe fetchData(String ipv4){
 
         HttpResponse<String> response = instanceConnect(ipv4);
         Bitaxe bitaxeData;
