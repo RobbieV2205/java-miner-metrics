@@ -5,12 +5,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.LineNumberInputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+
+import io.prometheus.metrics.core.metrics.Gauge;
+import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 
 public class App
 {
@@ -18,10 +21,17 @@ public class App
     {
 
         connectionCheck(args);
-        for (int index = 0; index < args.length; index++) {
-            Bitaxe instanceData = fetchData(args[index]);
+
+        ArrayList<Bitaxe> instanceArray = new ArrayList<>();
+
+        for (int index = 0; index < args.length; index++ ){
+            Bitaxe instanceData = fetchData(args[index], index);
+
+            instanceArray.add(instanceData);
+
         }
 
+        prometheusExporter(instanceArray);
     }
 
     public static HttpResponse<String> instanceConnect(String ipv4){
@@ -35,7 +45,7 @@ public class App
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(10))
+                .timeout(Duration.ofSeconds(6))
                 .GET()
                 .build();
 
@@ -53,17 +63,15 @@ public class App
         for (String arg : args) {
             HttpResponse<String> connection = instanceConnect(arg);
 
-            if (connection.statusCode() == 200) {
-                System.out.println("Connection to succesfull " + arg);
+            if (connection.statusCode() != 200) {
+                System.out.println("Error connecting to instance: " + arg);
             }
         }
-
-
-        // prometheus check
+        System.out.println("Connection checks succesfull.");
     }
 
 
-    public static Bitaxe fetchData(String ipv4){
+    public static Bitaxe fetchData(String ipv4, int index){
 
         HttpResponse<String> response = instanceConnect(ipv4);
         Bitaxe bitaxeData;
@@ -71,11 +79,48 @@ public class App
         ObjectMapper mapper = new ObjectMapper();
         try {
             bitaxeData = mapper.readValue(response.body(), Bitaxe.class);
+            bitaxeData.id = index;
+            bitaxeData.instanceIpv4 = ipv4;
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
         return bitaxeData;
+    }
+
+
+    public static void prometheusExporter(ArrayList<Bitaxe> instanceArray){
+
+
+        for (Bitaxe instance:instanceArray){
+
+            Gauge fanRPM = Gauge.builder()
+                    .name("fanRpm" + instance.id)
+                    .register();
+            fanRPM.set(instance.fanrpm);
+
+            Gauge hashRate = Gauge.builder()
+                    .name("hashRate" + instance.id)
+                    .register();
+            hashRate.set(instance.hashRate);
+        }
+
+        HTTPServer server = null;
+        try {
+            server = HTTPServer.builder()
+                    .port(9400)
+                    .buildAndStart();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
 }
