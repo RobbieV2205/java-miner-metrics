@@ -101,6 +101,41 @@ public class App
         return bitaxeData;
     }
 
+    private static final Gauge boardVersion = Gauge.builder()
+            .name("bitaxeboardVersion")
+            .help("board version of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge frequency = Gauge.builder()
+            .name("bitaxefrequency")
+            .help("Frequency setting of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge coreVoltage = Gauge.builder()
+            .name("bitaxecoreVoltage")
+            .help("Voltage setting of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge coreVoltageActual = Gauge.builder()
+            .name("bitaxecoreVoltageActual")
+            .help("Actual core voltage of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge tempTarget = Gauge.builder()
+            .name("bitaxetempTarget")
+            .help("Temprature setting of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge fanSpeed = Gauge.builder()
+            .name("bitaxefanSpeed")
+            .help("fan speed setting of the bitaxe")
+            .labelNames("instance")
+            .register();
 
     private static final Gauge fanRpm = Gauge.builder()
             .name("bitaxeFanRpm")
@@ -108,13 +143,29 @@ public class App
             .labelNames("instance")
             .register();
 
-
     private static final Gauge hashRate = Gauge.builder()
             .name("bitaxeHashRate")
             .help("Current hashrate")
             .labelNames("instance")
             .register();
 
+    private static final Gauge temp = Gauge.builder()
+            .name("bitaxetemp")
+            .help("Temprature of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge power = Gauge.builder()
+            .name("bitaxepower")
+            .help("power consumption of the bitaxe")
+            .labelNames("instance")
+            .register();
+
+    private static final Gauge uptimeSeconds = Gauge.builder()
+        .name("bitaxeuptimeSeconds")
+            .help("Uptime in seconds")
+            .labelNames("instance")
+            .register();
 
     public static void startExporter() {
         try {
@@ -133,8 +184,17 @@ public class App
 
         for (Bitaxe instance : instanceArray) {
             String id = String.valueOf(instance.id);
+            boardVersion.labelValues(id).set(instance.boardVersion);
+            frequency.labelValues(id).set(instance.frequency);
+            coreVoltage.labelValues(id).set(instance.coreVoltage);
+            coreVoltageActual.labelValues(id).set(instance.coreVoltageActual);
+            tempTarget.labelValues(id).set(instance.tempTarget);
+            fanSpeed.labelValues(id).set(instance.fanSpeed);
             fanRpm.labelValues(id).set(instance.fanrpm);
             hashRate.labelValues(id).set(instance.hashRate);
+            temp.labelValues(id).set(instance.temp);
+            power.labelValues(id).set(instance.power);
+            uptimeSeconds.labelValues(id).set(instance.uptimeSeconds);
         }
     }
 }
