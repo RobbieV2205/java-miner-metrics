@@ -18,7 +18,12 @@ public class Bitaxe {
     public double hashRate = 0.0;
     public double temp = 0.0;
     public double power = 0.0;
-    //public double joulesPerTeraHash = power / hashRate;
     public int uptimeSeconds = 0;
+    public double joulesPerTerahash = 0.0;
+    public double getJoulesPerTerahash() {
+        double terahash = hashRate / 1000.0; // GH/s -> TH/s
+        return power / terahash;             // Watt / (TH/s) = J/TH
+    }
+
 }
 

@@ -19,22 +19,34 @@ public class App
 {
     public static void main( String[] args )
     {
+        int scrapeInterval = 15000;
 
         connectionCheck(args);
+        startExporter();
 
-        ArrayList<Bitaxe> instanceArray = new ArrayList<>();
+        while (true) {
 
-        for (int index = 0; index < args.length; index++ ){
-            Bitaxe instanceData = fetchData(args[index], index);
+            ArrayList<Bitaxe> instanceArray = new ArrayList<>();
 
-            instanceArray.add(instanceData);
+            for (int index = 0; index < args.length; index++) {
 
+                Bitaxe instanceData = scrapeData(args[index], index);
+                instanceArray.add(instanceData);
+            }
+
+            updateMetrics(instanceArray);
+
+            try {
+                Thread.sleep(scrapeInterval);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
-
-        prometheusExporter(instanceArray);
     }
 
     public static HttpResponse<String> instanceConnect(String ipv4){
+
+        int maxTimeOut = 3;
 
         HttpResponse<String> response;
         String url = "http://" + ipv4 + "/api/system/info";
@@ -45,7 +57,7 @@ public class App
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(6))
+                .timeout(Duration.ofSeconds(maxTimeOut))
                 .GET()
                 .build();
 
@@ -54,7 +66,6 @@ public class App
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-
         return response;
     }
 
@@ -67,20 +78,22 @@ public class App
                 System.out.println("Error connecting to instance: " + arg);
             }
         }
-        System.out.println("Connection checks succesfull.");
     }
 
 
-    public static Bitaxe fetchData(String ipv4, int index){
+    public static Bitaxe scrapeData(String ipv4, int index){
 
         HttpResponse<String> response = instanceConnect(ipv4);
         Bitaxe bitaxeData;
 
         ObjectMapper mapper = new ObjectMapper();
+
         try {
             bitaxeData = mapper.readValue(response.body(), Bitaxe.class);
             bitaxeData.id = index;
             bitaxeData.instanceIpv4 = ipv4;
+            bitaxeData.joulesPerTerahash = bitaxeData.getJoulesPerTerahash();
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -89,38 +102,40 @@ public class App
     }
 
 
-    public static void prometheusExporter(ArrayList<Bitaxe> instanceArray){
+    private static final Gauge fanRpm = Gauge.builder()
+            .name("bitaxeFanRpm")
+            .help("Fan speed in RPM")
+            .labelNames("instance")
+            .register();
 
 
-        for (Bitaxe instance:instanceArray){
+    private static final Gauge hashRate = Gauge.builder()
+            .name("bitaxeHashRate")
+            .help("Current hashrate")
+            .labelNames("instance")
+            .register();
 
-            Gauge fanRPM = Gauge.builder()
-                    .name("fanRpm" + instance.id)
-                    .register();
-            fanRPM.set(instance.fanrpm);
 
-            Gauge hashRate = Gauge.builder()
-                    .name("hashRate" + instance.id)
-                    .register();
-            hashRate.set(instance.hashRate);
-        }
-
-        HTTPServer server = null;
+    public static void startExporter() {
         try {
-            server = HTTPServer.builder()
+            HTTPServer.builder()
                     .port(9400)
                     .buildAndStart();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-
     }
 
+
+    public static void updateMetrics(ArrayList<Bitaxe> instanceArray) {
+        fanRpm.clear();
+        hashRate.clear();
+
+        for (Bitaxe instance : instanceArray) {
+            String id = String.valueOf(instance.id);
+            fanRpm.labelValues(id).set(instance.fanrpm);
+            hashRate.labelValues(id).set(instance.hashRate);
+        }
+    }
 }
+
