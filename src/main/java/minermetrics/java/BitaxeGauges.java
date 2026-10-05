@@ -72,4 +72,10 @@ public final class BitaxeGauges {
             .labelNames("instance")
             .register();
 
+    public static final Gauge joulesPerTerahash = Gauge.builder()
+            .name("bitaxejoulesPerTerahash")
+            .help("Joules per terahash power / terahashes")
+            .labelNames("instance")
+            .register();
+
 }

@@ -5,13 +5,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.net.HttpRetryException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
-
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 
 public class App
@@ -21,19 +22,20 @@ public class App
         int scrapeInterval = 15000;
         int loopCount = 0;
 
-        connectionCheck(args);
         startExporter();
 
         while (true) {
 
             loopCount++;
+
             ArrayList<Bitaxe> instanceArray = new ArrayList<>();
+            ArrayList<String> validInstances = new ArrayList<>();
 
-            for (int index = 0; index < args.length; index++) {
+            validInstances = connectionCheck(args);
 
+            for (int index = 0; index < validInstances.toArray().length; index++) {
 
-
-                Bitaxe instanceData = scrapeData(args[index], index);
+                Bitaxe instanceData = scrapeData(validInstances.get(index), index);
                 instanceArray.add(instanceData);
             }
 
@@ -72,15 +74,35 @@ public class App
         return response;
     }
 
-    public static void connectionCheck( String[] args ) {
+    public static ArrayList<String> connectionCheck( String[] args ) {
 
-        for (String arg : args) {
-            HttpResponse<String> connection = instanceConnect(arg);
+        ArrayList<String> validInstances = new ArrayList<>();
 
-            if (connection.statusCode() != 200) {
-                System.out.println("Error connecting to instance: " + arg);
+        for (int index = 0; index < args.length; index++) {
+            int maxTimeOut = 3;
+
+            String url = "http://" + args[index] + "/api/system/info";
+
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(maxTimeOut))
+                    .GET()
+                    .build();
+
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+                validInstances.add(args[index]);
+            }  catch (HttpRetryException | HttpTimeoutException e) {
+                System.out.println("Time-out at " + args[index]);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
+        return validInstances;
     }
 
 
@@ -116,8 +138,6 @@ public class App
 
 
     public static void updateMetrics(ArrayList<Bitaxe> instanceArray) {
-        BitaxeGauges.fanRpm.clear();
-        BitaxeGauges.hashRate.clear();
 
         for (Bitaxe instance : instanceArray) {
             String id = String.valueOf(instance.id);
@@ -132,6 +152,7 @@ public class App
             BitaxeGauges.temp.labelValues(id).set(instance.temp);
             BitaxeGauges.power.labelValues(id).set(instance.power);
             BitaxeGauges.uptimeSeconds.labelValues(id).set(instance.uptimeSeconds);
+            BitaxeGauges.joulesPerTerahash.labelValues(id).set(instance.joulesPerTerahash);
         }
     }
 }
