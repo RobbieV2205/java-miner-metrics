@@ -20,16 +20,13 @@ public class App
     public static void main( String[] args )
     {
         int scrapeInterval = 15000;
-        int loopCount = 0;
 
         startExporter();
 
         while (true) {
 
-            loopCount++;
-
             ArrayList<Bitaxe> instanceArray = new ArrayList<>();
-            ArrayList<String> validInstances = new ArrayList<>();
+            ArrayList<String> validInstances;
 
             validInstances = connectionCheck(args);
 
