@@ -12,14 +12,25 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 
 public class App
 {
+
+    static LocalDateTime myDateObj = LocalDateTime.now();
+    static DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+    static String formattedDate = myDateObj.format(myFormatObj);
+
     public static void main( String[] args )
     {
         int scrapeInterval = 15000;
+
+        System.out.println(formattedDate + " Application start ");
 
         startExporter();
 
@@ -94,7 +105,7 @@ public class App
                 client.send(request, HttpResponse.BodyHandlers.ofString());
                 validInstances.add(args[index]);
             }  catch (HttpRetryException | HttpTimeoutException e) {
-                System.out.println("Time-out at " + args[index]);
+                System.out.println(formattedDate + " Time-out with instance: " + args[index]);
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
