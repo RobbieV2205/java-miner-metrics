@@ -12,9 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
@@ -57,6 +55,38 @@ public class App
         }
     }
 
+    public static ArrayList<String> connectionCheck( String[] args ) {
+
+        ArrayList<String> validInstances = new ArrayList<>();
+
+        for (String arg : args) {
+            int maxTimeOut = 3;
+
+            String url = "http://" + arg + "/api/system/info";
+
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(maxTimeOut))
+                    .GET()
+                    .build();
+
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+                validInstances.add(arg);
+            } catch (HttpRetryException | HttpTimeoutException e) {
+                System.out.println(formattedDate + " Time-out with instance: " + arg);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return validInstances;
+    }
+
+
     public static HttpResponse<String> instanceConnect(String ipv4){
 
         int maxTimeOut = 3;
@@ -81,38 +111,6 @@ public class App
         }
         return response;
     }
-
-    public static ArrayList<String> connectionCheck( String[] args ) {
-
-        ArrayList<String> validInstances = new ArrayList<>();
-
-        for (int index = 0; index < args.length; index++) {
-            int maxTimeOut = 3;
-
-            String url = "http://" + args[index] + "/api/system/info";
-
-            HttpClient client = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .build();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(maxTimeOut))
-                    .GET()
-                    .build();
-
-            try {
-                client.send(request, HttpResponse.BodyHandlers.ofString());
-                validInstances.add(args[index]);
-            }  catch (HttpRetryException | HttpTimeoutException e) {
-                System.out.println(formattedDate + " Time-out with instance: " + args[index]);
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return validInstances;
-    }
-
 
     public static Bitaxe scrapeData(String ipv4, int index){
 
@@ -143,7 +141,6 @@ public class App
             throw new RuntimeException(e);
         }
     }
-
 
     public static void updateMetrics(ArrayList<Bitaxe> instanceArray) {
 
