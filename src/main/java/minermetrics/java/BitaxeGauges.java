@@ -72,6 +72,12 @@ public final class BitaxeGauges {
             .labelNames("instance")
             .register();
 
+    public static final Gauge active_power_w = Gauge.builder()
+            .name("active_power_w")
+            .help("Power consumption metered from my Homewizard energy socket.")
+            .labelNames("instance")
+            .register();
+
     public static final Gauge joulesPerTerahash = Gauge.builder()
             .name("bitaxejoulesPerTerahash")
             .help("Joules per terahash power / terahashes")

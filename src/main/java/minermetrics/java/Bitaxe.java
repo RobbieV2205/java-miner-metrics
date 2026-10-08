@@ -18,6 +18,7 @@ public class Bitaxe {
     public double hashRate = 0.0;
     public double temp = 0.0;
     public double power = 0.0;
+    public double active_power_w = 0;
     public int uptimeSeconds = 0;
     public double joulesPerTerahash = 0.0;
     public double getJoulesPerTerahash() {

@@ -12,9 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
@@ -82,6 +80,38 @@ public class App
         return response;
     }
 
+    public static double fetchEnergyData() throws JsonProcessingException {
+
+        int maxTimeOut = 3;
+        String ipv4 = "192.168.1.11";
+        ObjectMapper mapper = new ObjectMapper();
+
+
+        HttpResponse<String> response;
+        String url = "http://" + ipv4 + "/api/v1/data";
+
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(maxTimeOut))
+                .GET()
+                .build();
+
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        EnergySocket energySocketValue =  mapper.readValue(response.body(), EnergySocket.class);
+
+        return energySocketValue.active_power_w;
+    }
+
+
     public static ArrayList<String> connectionCheck( String[] args ) {
 
         ArrayList<String> validInstances = new ArrayList<>();
@@ -126,6 +156,7 @@ public class App
             bitaxeData.id = index;
             bitaxeData.instanceIpv4 = ipv4;
             bitaxeData.joulesPerTerahash = bitaxeData.getJoulesPerTerahash();
+            bitaxeData.active_power_w = fetchEnergyData();
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -159,6 +190,7 @@ public class App
             BitaxeGauges.hashRate.labelValues(id).set(instance.hashRate);
             BitaxeGauges.temp.labelValues(id).set(instance.temp);
             BitaxeGauges.power.labelValues(id).set(instance.power);
+            BitaxeGauges.active_power_w.labelValues(id).set(instance.active_power_w);
             BitaxeGauges.uptimeSeconds.labelValues(id).set(instance.uptimeSeconds);
             BitaxeGauges.joulesPerTerahash.labelValues(id).set(instance.joulesPerTerahash);
         }

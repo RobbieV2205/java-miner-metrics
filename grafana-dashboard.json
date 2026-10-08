@@ -150,7 +150,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "bitaxepower{exported_instance=~\"$bitaxe\"}",
+          "expr": "active_power_w{exported_instance=~\"$bitaxe\"}",
           "legendFormat": "{{exported_instance}}",
           "refId": "A",
           "editorMode": "code",
@@ -468,7 +468,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "bitaxepower{exported_instance=~\"$bitaxe\"}",
+          "expr": "active_power_w{exported_instance=~\"$bitaxe\"}",
           "legendFormat": "Power",
           "refId": "A",
           "editorMode": "code",
