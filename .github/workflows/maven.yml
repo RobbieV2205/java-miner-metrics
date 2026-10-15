@@ -21,11 +21,12 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-  doocker-build-job:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag java-miner-metrics:$(date +%s)
+      - name: Build & push Docker image
+        uses: mr-smithers-excellent/docker-build-push@v7
+        with:
+          image: robbiev2205/java-miner-metrics
+          tags: latest
+          registry: docker.io
+          dockerfile: Dockerfile.ci
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
