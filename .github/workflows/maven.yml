@@ -1,0 +1,23 @@
+name: Java Maven Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+
+jobs:
+  build_test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with maven
+        run: mvn -B package --file pom.xml
+        
