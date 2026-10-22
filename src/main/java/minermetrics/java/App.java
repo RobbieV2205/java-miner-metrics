@@ -28,7 +28,12 @@ public class App
     {
         int scrapeInterval = 15000;
 
-        System.out.println(formattedDate + " Application start ");
+        if (args.length > 0) {
+            System.out.println(formattedDate + " Application start ");
+        } else {
+            System.out.println(formattedDate + " Error: no args found");
+            System.exit(1);
+        }
 
         startExporter();
 
